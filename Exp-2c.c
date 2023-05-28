@@ -1,6 +1,7 @@
 #include <pthread.h>
-#include <semaphore.h>
+#include <dispatch/dispatch.h>
 #include <stdio.h>
+#include <unistd.h>  // Add this line to include the sleep function
 
 #define N 5
 #define THINKING 2
@@ -12,8 +13,8 @@
 int state[N];
 int phil[N] = {0, 1, 2, 3, 4};
 
-sem_t mutex;
-sem_t S[N];
+dispatch_semaphore_t mutex;
+dispatch_semaphore_t S[N];
 
 void test(int phnum)
 {
@@ -29,11 +30,10 @@ void test(int phnum)
 
         printf("Philosopher %d is Eating\n", phnum + 1);
 
-        // sem_post(&S[phnum]) has no effect
-        // during takefork
+        // dispatch_semaphore_signal(S[phnum]) has no effect
+        // during take_fork
         // used to wake up hungry philosophers
-        // during putfork
-        sem_post(&S[phnum]);
+        dispatch_semaphore_signal(S[phnum]);
     }
 }
 
@@ -41,20 +41,20 @@ void test(int phnum)
 void take_fork(int phnum)
 {
 
-    sem_wait(&mutex);
+    dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER);
 
     // state that hungry
     state[phnum] = HUNGRY;
 
     printf("Philosopher %d is Hungry\n", phnum + 1);
 
-    // eat if neighbours are not eating
+    // eat if neighbors are not eating
     test(phnum);
 
-    sem_post(&mutex);
+    dispatch_semaphore_signal(mutex);
 
-    // if unable to eat wait to be signalled
-    sem_wait(&S[phnum]);
+    // if unable to eat wait to be signaled
+    dispatch_semaphore_wait(S[phnum], DISPATCH_TIME_FOREVER);
 
     sleep(1);
 }
@@ -63,7 +63,7 @@ void take_fork(int phnum)
 void put_fork(int phnum)
 {
 
-    sem_wait(&mutex);
+    dispatch_semaphore_wait(mutex, DISPATCH_TIME_FOREVER);
 
     // state that thinking
     state[phnum] = THINKING;
@@ -75,7 +75,7 @@ void put_fork(int phnum)
     test(LEFT);
     test(RIGHT);
 
-    sem_post(&mutex);
+    dispatch_semaphore_signal(mutex);
 }
 
 void *philosopher(void *num)
@@ -98,11 +98,10 @@ int main()
     pthread_t thread_id[N];
 
     // initialize the semaphores
-    sem_init(&mutex, 0, 1);
+    mutex = dispatch_semaphore_create(1);
 
     for (i = 0; i < N; i++)
-
-        sem_init(&S[i], 0, 0);
+        S[i] = dispatch_semaphore_create(0);
 
     for (i = 0; i < N; i++)
     {
@@ -116,4 +115,7 @@ int main()
 
     for (i = 0; i < N; i++)
         pthread_join(thread_id[i], NULL);
+
+    printf("\n\n");
+    return 0;
 }
