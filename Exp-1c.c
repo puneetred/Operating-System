@@ -1,85 +1,76 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include<stdio.h>
+
+struct process
+{
+    int WT, AT, BT, TAT;
+};
+
+struct process a[10];
 
 int main()
 {
-    int A[100][5]; // Matrix for storing Process Id, Burst Time, Arrival Time, Waiting Time, Turn Around Time.
-    int i, j, n, total = 0, index, temp;
-    float avg_wt, avg_tat;
-    
-    printf("Enter the number of processes: ");
-    scanf("%d", &n);
-    
-    printf("\nEnter Burst Time and Arrival Time:\n");
-    // User Input Burst Time and Arrival Time and allocating Process Id.
-    for (i = 0; i < n; i++)
+    int n,temp[10];
+    int count=0,t=0,short_P;
+    float total_WT=0, total_TAT=0,Avg_WT,Avg_TAT;
+    printf("Enter the number of the process\n");
+    scanf("%d",&n);
+    printf("Enter the arrival time and burst time of the process\n");
+    printf("AT BT\n");
+    for(int i=0;i<n;i++)
     {
-        printf("P%d:\n", i + 1);
-        printf("Burst Time: ");
-        scanf("%d", &A[i][1]);
-        printf("Arrival Time: ");
-        scanf("%d", &A[i][2]);
-        A[i][0] = i + 1;
-    }
-    
-    // Sorting the processes based on their Burst Time and Arrival Time.
-    for (i = 0; i < n; i++)
-    {
-        index = i;
-        for (j = i + 1; j < n; j++)
-        {
-            if (A[j][1] < A[index][1])
-            {
-                index = j;
-            }
-            else if (A[j][1] == A[index][1] && A[j][2] < A[index][2])
-            {
-                index = j;
-            }
-        }
-        temp = A[i][1];
-        A[i][1] = A[index][1];
-        A[index][1] = temp;
+        scanf("%d%d", &a[i].AT, &a[i].BT);
 
-        temp = A[i][2];
-        A[i][2] = A[index][2];
-        A[index][2] = temp;
+        // copying the burst time in
+        // a temp array for the further use
+        // in calculation of WT
+        temp[i]=a[i].BT;
+    }
 
-        temp = A[i][0];
-        A[i][0] = A[index][0];
-        A[index][0] = temp;
-    }
-    
-    A[0][3] = 0; // Waiting time for the first process is 0.
-    
-    // Calculation of Waiting Times and Turn Around Times.
-    for (i = 1; i < n; i++)
+    // we initialize the burst time of a process with the maximum
+    a[9].BT=10000;
+    // loop will be execute until all the process complete so we use count!= number of 
+    // the process
+    for(t=0;count!=n;t++)
     {
-        int sum = 0;
-        for (j = 0; j < i; j++)
+        // for finding min burst
+        // it is useful 
+        short_P = 9;
+        for(int i=0; i<n; i++)
         {
-            sum += A[j][1];
+            if(a[i].BT < a[short_P].BT && (a[i].AT<=t && a[i].BT>0))
+            {
+                short_P=i;
+            }
+
         }
-        A[i][3] = sum - A[i][2];
-        total += A[i][3];
+
+        a[short_P].BT=a[short_P].BT-1;
+
+        // if any process is completed
+        if(a[short_P].BT==0)
+        {
+            // one process complete
+            count++;
+            a[short_P].WT=t+1-a[short_P].AT-temp[short_P];
+            a[short_P].TAT=t+1-a[short_P].AT;
+
+            // total calculation
+            total_WT=total_WT+a[short_P].WT;
+            total_TAT=total_TAT+a[short_P].TAT;
+        }
+
+
+
     }
-    
-    avg_wt = (float)total / n;
-    total = 0;
-    
-    printf("\nP    BT    AT    WT    TAT\n");
-    // Calculation of Turn Around Time and printing the data.
-    for (i = 0; i < n; i++)
+    Avg_WT=total_WT/n;
+    Avg_TAT=total_TAT/n;
+
+    // printing of the answer
+    printf("Id WT TAT\n");
+    for(int i=0;i<n;i++)
     {
-        A[i][4] = A[i][1] + A[i][3];
-        total += A[i][4];
-        printf("P%d   %d     %d     %d     %d\n", A[i][0],
-               A[i][1], A[i][2], A[i][3], A[i][4]);
+        printf("%d\t%d\t%d\n",i+1,a[i].WT,a[i].TAT);
     }
-    
-    avg_tat = (float)total / n;
-    printf("\nAverage Waiting Time: %f", avg_wt);
-    printf("\nAverage Turnaround Time: %f\n\n", avg_tat);
-    
-    return 0;
+    printf("Avg waiting time of the process is %f\n",Avg_WT);
+    printf("Avg turn around time of the process %f\n",Avg_TAT);
 }
